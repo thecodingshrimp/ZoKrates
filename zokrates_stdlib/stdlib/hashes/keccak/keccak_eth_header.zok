@@ -76,21 +76,27 @@ def keccakf(u64[25] st) -> u64[25]:
     endfor
     return st
 
-def main<N, W>(u64[N] input, u64 pad) -> u64[25]:
+def main(u64[71] input, u64 pad, u32 ls8b) -> u64[25]:
     u64[25] q = [0; 25]
-    u32 rate = (200 - (W / 4)) / 8
+    u32 rate = 17
     u32 pt = 0
 
     // change endianness of inputs from big endian to little endian
-    for u32 i in 0..N do
+    for u32 i in 0..71 do
         input[i] = swap_u64(input[i])
     endfor
 
     // update
-    for u32 i in 0..N do
+    for u32 i in 0..57 do
         q[pt] = q[pt] ^ input[i]
         pt = (pt + 1) % rate
         q = if pt == 0 then keccakf(q) else q fi
+    endfor
+
+    for u32 i in 57..71 do
+        q[pt] = if i < ls8b then q[pt] ^ input[i] else q[pt] fi
+        pt = if i < ls8b then (pt + 1) % rate else pt fi
+        q = if pt == 0 && i < ls8b then keccakf(q) else q fi
     endfor
 
     // if pad then start after last byte
@@ -102,7 +108,7 @@ def main<N, W>(u64[N] input, u64 pad) -> u64[25]:
     q = keccakf(q)
 
     // change endianness of output from little endian to big endian
-    for u32 i in 0..W/64 do
+    for u32 i in 0..4 do
         q[i] = swap_u64(q[i])
     endfor
 
