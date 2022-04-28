@@ -93,10 +93,15 @@ def main(u64[71] input, u64 pad, u32 ls8b) -> u64[25]:
         q = if pt == 0 then keccakf(q) else q fi
     endfor
 
+
+    u64[25] q_2 = q
+    u32 pt_2 = pt
     for u32 i in 57..71 do
-        q[pt] = if i < ls8b then q[pt] ^ input[i] else q[pt] fi
-        pt = if i < ls8b then (pt + 1) % rate else pt fi
-        q = if pt == 0 && i < ls8b then keccakf(q) else q fi
+        q_2[pt_2] = q[pt_2] ^ input[i]
+        pt_2 = (pt_2 + 1) % rate
+        q_2 = if pt_2 == 0 then keccakf(q_2) else q_2 fi
+        q = if i < ls8b then q_2 else q fi
+        pt = if i < ls8b then pt_2 else pt fi
     endfor
 
     // if pad then start after last byte
